@@ -87,6 +87,7 @@ public class GameView extends View {
 	private int movingCardIndex = -1;
 	private int movingX;
 	private int movingY;
+	private boolean stackCardSelected;
 	/**
 	 * constructor
 	 * @param context
@@ -254,11 +255,7 @@ public class GameView extends View {
 		if(oppStack.size() != 0){
 			canvas.drawBitmap(oppStack.get(0).getBitmap(), scale*5, blackPaint.getTextSize() + (20*scale), null);
 		}
-		//draw the top card of player's stack
-		if(myStack.size() != 0){
-			canvas.drawBitmap(myStack.get(0).getBitmap(), screenW - myStack.get(0).getBitmap().getWidth() - 50, (int) (screenH*0.6) + 30 ,null);
-		}
-		
+
 		//draw the discard pile for player
 		for (int i = 0; i < 4; i++){
 			canvas.drawBitmap(discardP, i*(scaledCardW + 35)+ (screenW - 105 - 4*discardP.getWidth())/2, (int) (screenH * 0.45), null);
@@ -290,6 +287,19 @@ public class GameView extends View {
 				canvas.drawBitmap(myHand.get(i).getBitmap(), i*(scaledCardW + 10) + (screenW - 5*cardBack.getWidth() - 40)/2, screenH - (cardBack.getHeight() + 20), null);
 			}
 		}
+		
+		//draw the top card of player's stack
+		if(myStack.size() != 0){
+			//if the stack card is selected. paint the card according to the moving coordinate
+			if(stackCardSelected){
+				canvas.drawBitmap(myStack.get(0).getBitmap(), movingX, movingY ,null);
+			}
+			//if not, paint it at the original position
+			else{
+				canvas.drawBitmap(myStack.get(0).getBitmap(), screenW - myStack.get(0).getBitmap().getWidth() - 50, (int) (screenH*0.6) + 30 ,null);
+			}
+		}
+		
 		//refresh the buffer
 		invalidate();
 	}
@@ -312,6 +322,7 @@ public class GameView extends View {
 			
 			//collision detection for picking up cards from player's hand
 			if(myTurn){
+				//hand cards
 				for(int i = 0; i < 5; i++){
 					//setting up the variables for where the card's bitmap starts and ends in terms of X and Y
 					int cardStartX = i*(scaledCardW + 10) + (screenW - 5*cardBack.getWidth() - 40)/2;
@@ -323,6 +334,15 @@ public class GameView extends View {
 						movingCardIndex = i;
 						//adjust the position of the card so that player
 						//can see it
+						movingX = x - (int) (30*scale);
+						movingY = y - (int) (70*scale);
+					}
+					//stack card movement
+					int stackCardX = screenW - myStack.get(0).getBitmap().getWidth() - 50;
+					int stackCardY = (int) (screenH*0.6) + 30;
+					if ( x > stackCardX && x < stackCardX + scaledCardW &&
+							y > stackCardY && y < stackCardY + scaledCardH){
+						stackCardSelected = true;
 						movingX = x - (int) (30*scale);
 						movingY = y - (int) (70*scale);
 					}
@@ -341,6 +361,8 @@ public class GameView extends View {
 			endTurnButtonPressed = false;
 			//reset selected card
 			movingCardIndex = -1;
+			//reset the stack card
+			stackCardSelected = false;
 			break;
 		}
 	invalidate();
