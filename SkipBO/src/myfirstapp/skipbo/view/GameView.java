@@ -51,7 +51,7 @@ public class GameView extends View {
 	private Bitmap endTurnButtonDown;
 	private boolean endTurnButtonPressed;
 	
-	//private boolean myTurn;
+	private boolean myTurn;
 	
 	//bitmaps for drawing piles
 	private Bitmap discardP;
@@ -83,6 +83,10 @@ public class GameView extends View {
 	private List<Card> myStack = new LinkedList<Card>();
 	private List<Card> oppStack = new LinkedList<Card>();
 	
+	//card movement variables
+	private int movingCardIndex = -1;
+	private int movingX;
+	private int movingY;
 	/**
 	 * constructor
 	 * @param context
@@ -99,8 +103,8 @@ public class GameView extends View {
 		blackPaint.setStyle(Paint.Style.STROKE);
 		blackPaint.setTextAlign(Paint.Align.LEFT);
 		blackPaint.setTextSize(scale*15);
-		//randomly decide who goes first
-		//myTurn = new Random().nextBoolean();
+		//starts with player's turn (may be modified later)
+		myTurn = true;
 	}
 	
 	/**
@@ -238,16 +242,13 @@ public class GameView extends View {
 	 */
 	@Override
 	protected void onDraw(Canvas canvas) { 
-		//draws the computer score onto the screen
+		//draws the computer's stack size onto the screen
 		canvas.drawText("Computer stack size: " + Integer.toString(oppStack.size()), 10, blackPaint.getTextSize() + 10, blackPaint);
-		//draws player score onto the screen
+		//draws player stack size onto the screen
 		//note that the text will show under player's stack
 		String myStackSize = "My stack size: " + Integer.toString(myStack.size());
 		canvas.drawText(myStackSize, screenW - (blackPaint.measureText(myStackSize) + 40),(int) (screenH*0.6) + 75 + cardBack.getHeight(), blackPaint);
-		//draw cards on player's hands
-		for (int i = 0; i < myHand.size(); i++) {
-			canvas.drawBitmap(myHand.get(i).getBitmap(), i*(scaledCardW + 10) + (screenW - 5*cardBack.getWidth() - 40)/2, screenH - (cardBack.getHeight() + 20), null);
-		}
+		
 		//draw the top card of opponent's stack
 		//make sure when the stack is empty, it doesn't draw anything
 		if(oppStack.size() != 0){
@@ -273,11 +274,24 @@ public class GameView extends View {
 		
 		//draw the end turn button onto the screen
 		if (endTurnButtonPressed){
-			canvas.drawBitmap(endTurnButtonDown, screenW - endTurnButtonDown.getWidth() - 20, screenH + endTurnButtonDown.getHeight(), null );
+			canvas.drawBitmap(endTurnButtonDown, (int)(screenW/6), (int) (screenH*0.67), null );
 		}
 		else {
-			canvas.drawBitmap(endTurnButtonUp,  screenW - endTurnButtonUp.getWidth() - 20, screenH + endTurnButtonDown.getHeight(), null );
+			canvas.drawBitmap(endTurnButtonUp, (int)(screenW/6), (int) (screenH*0.67), null );
 		}
+		
+		//draw the moving cards when the player selects
+		for (int i = 0; i < myHand.size(); i++){
+			if(i == movingCardIndex){
+				//if the card is selected, in the onTouchEvent, the coordinates should be assigned to movingX and movingY
+				canvas.drawBitmap(myHand.get(i).getBitmap(), movingX, movingY, null);
+			}
+			else{
+				canvas.drawBitmap(myHand.get(i).getBitmap(), i*(scaledCardW + 10) + (screenW - 5*cardBack.getWidth() - 40)/2, screenH - (cardBack.getHeight() + 20), null);
+			}
+		}
+		//refresh the buffer
+		invalidate();
 	}
 	 
 	public boolean onTouchEvent(MotionEvent event) {
@@ -289,19 +303,44 @@ public class GameView extends View {
 	switch (eventAction) {
 		case MotionEvent.ACTION_DOWN:
 			//collision detection for endTurnButton
-			if ( x > 400 &&
-					 x < (400 + endTurnButtonUp.getWidth()) &&
-					 y > (int) (blackPaint.getTextSize() + 30) &&
-					 y < (int) (blackPaint.getTextSize() + 30) + endTurnButtonUp.getHeight()){
+			if ( x > (int)(screenW/6) &&
+					 x < ((int)(screenW/6) + endTurnButtonUp.getWidth()) &&
+					 y > (int) (screenH*0.67) &&
+					 y < (int) (screenH*0.67) + endTurnButtonUp.getHeight()){
 					endTurnButtonPressed = true;
 				}
+			
+			//collision detection for picking up cards from player's hand
+			if(myTurn){
+				for(int i = 0; i < 5; i++){
+					//setting up the variables for where the card's bitmap starts and ends in terms of X and Y
+					int cardStartX = i*(scaledCardW + 10) + (screenW - 5*cardBack.getWidth() - 40)/2;
+					int cardEndX = i*(scaledCardW + 10) + (screenW - 5*cardBack.getWidth() - 40)/2 + scaledCardW;
+					int cardStartY = screenH - (cardBack.getHeight() + 20);
+					int cardEndY = screenH - (cardBack.getHeight() + 20) + scaledCardH;
+					if( x > cardStartX && x < cardEndX &&
+							y > cardStartY && y < cardEndY){
+						movingCardIndex = i;
+						//adjust the position of the card so that player
+						//can see it
+						movingX = x - (int) (30*scale);
+						movingY = y - (int) (70*scale);
+					}
+				}
+			}
 			break;
 		
 		case MotionEvent.ACTION_MOVE:
+			//don't remember
+			movingX = x - (int) (30*scale);
+			movingY = y - (int) (70*scale);
 			break;
 		
 		case MotionEvent.ACTION_UP:
+			//reset end Button
 			endTurnButtonPressed = false;
+			//reset selected card
+			movingCardIndex = -1;
 			break;
 		}
 	invalidate();
