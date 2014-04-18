@@ -60,24 +60,24 @@ public class GameView extends View {
 	//hands
 	private List<Card> myHand = new LinkedList<Card>();
 	private List<Card> oppHand = new LinkedList<Card>();
+	
 	//player's discard piles
-	//not needed for now
-	//private List<Card> myDiscardOne = new LinkedList<Card>();
-	//private List<Card> myDiscardTwo = new LinkedList<Card>();
-	//private List<Card> myDiscardThree = new LinkedList<Card>();
-	//private List<Card> myDiscardFour = new LinkedList<Card>();
+	private List<Card> myDiscardOne = new LinkedList<Card>();
+	private List<Card> myDiscardTwo = new LinkedList<Card>();
+	private List<Card> myDiscardThree = new LinkedList<Card>();
+	private List<Card> myDiscardFour = new LinkedList<Card>();
 	
 	//opp's discard piles
-	//private List<Card> oppDiscardOne = new LinkedList<Card>();
-	//private List<Card> oppDiscardTwo = new LinkedList<Card>();
-	//private List<Card> oppDiscardThree = new LinkedList<Card>();
-	//private List<Card> oppDiscardFour = new LinkedList<Card>();
+	private List<Card> oppDiscardOne = new LinkedList<Card>();
+	private List<Card> oppDiscardTwo = new LinkedList<Card>();
+	private List<Card> oppDiscardThree = new LinkedList<Card>();
+	private List<Card> oppDiscardFour = new LinkedList<Card>();
 	
 	//building piles
-	//private List<Card> buildPileOne = new LinkedList<Card>();
-	//private List<Card> buildPileTwo = new LinkedList<Card>();
-	//private List<Card> buildPileThree = new LinkedList<Card>();
-	//private List<Card> buildPileFour = new LinkedList<Card>();
+	private List<Card> buildPileOne = new LinkedList<Card>();
+	private List<Card> buildPileTwo = new LinkedList<Card>();
+	private List<Card> buildPileThree = new LinkedList<Card>();
+	private List<Card> buildPileFour = new LinkedList<Card>();
 	
 	//stacks for each player
 	private List<Card> myStack = new LinkedList<Card>();
@@ -88,6 +88,11 @@ public class GameView extends View {
 	private int movingX;
 	private int movingY;
 	private boolean stackCardSelected;
+	private int pileSelected = -1;
+	private int discardPileSelected = -1;
+	private boolean discardNow = false;
+
+	
 	/**
 	 * constructor
 	 * @param context
@@ -104,8 +109,6 @@ public class GameView extends View {
 		blackPaint.setStyle(Paint.Style.STROKE);
 		blackPaint.setTextAlign(Paint.Align.LEFT);
 		blackPaint.setTextSize(scale*15);
-		//starts with player's turn (may be modified later)
-		myTurn = true;
 	}
 	
 	/**
@@ -121,6 +124,8 @@ public class GameView extends View {
         //initialize the deck
 		initCards();
 		//deal cards to each player's hand
+		
+		//test purpose, all skipbo card
 		myHand = dealCards(myHand);
 		oppHand = dealCards(oppHand);
 		//add cards to each player's stack
@@ -143,6 +148,42 @@ public class GameView extends View {
 		Bitmap tempTurnButtonPressed = BitmapFactory.decodeResource(myContext.getResources(), R.drawable.end_turn_down);
 		endTurnButtonUp = Bitmap.createScaledBitmap(tempTurnButton, (int) 2*screenW/5, 3*scaledCardH/4, false);
 		endTurnButtonDown = Bitmap.createScaledBitmap(tempTurnButtonPressed, (int) 2*screenW/5, 3*scaledCardH/4, false);
+		
+		//Turn
+		myTurn = true;
+		if(myTurn){
+		//at the beginning of each turn, player's hand size must be filled to 5
+			int cardsToDeal =  5 - myHand.size();
+			for(int j = 0; j < cardsToDeal; j++){
+				dealCards(myHand);
+			}
+		}
+		if (discardNow){		
+			switch(discardPileSelected){
+			case 0:
+				myDiscardOne.add(myHand.get(movingCardIndex));
+				myHand.remove(movingCardIndex);
+				break;
+			case 1:
+				myDiscardTwo.add(myHand.get(movingCardIndex));
+				myHand.remove(movingCardIndex);
+				break;
+			case 2:
+				myDiscardThree.add(myHand.get(movingCardIndex));
+				myHand.remove(movingCardIndex);
+				break;
+			case 3:
+				myDiscardFour.add(myHand.get(movingCardIndex));
+				myHand.remove(movingCardIndex);
+				break;
+			}
+			//after discarding, player turn ends
+			myTurn = false;
+			//make computer play
+			
+			//return to player
+			myTurn = true;
+		}
 	}
 	
 	/**
@@ -193,7 +234,10 @@ public class GameView extends View {
 				int tempId = i;
 				Card tempCard = new Card(tempId);
 				//The getIdentifier has three arguments, (pictureName, folder,packageName)
-				int resourceId = getResources().getIdentifier("card" + tempId, "drawable", myContext.getPackageName());
+				//----------------------------------------------------------------TEST
+				int resourceId = getResources().getIdentifier("card" + 13, "drawable", myContext.getPackageName());
+				//-------------------------------------------------------------------
+				//int resourceId = getResources().getIdentifier("card" + tempId, "drawable", myContext.getPackageName());
 				//draw the Card
 				Bitmap tempBitmap = BitmapFactory.decodeResource(myContext.getResources(), resourceId);
 				//scale the card
@@ -257,18 +301,112 @@ public class GameView extends View {
 		}
 
 		//draw the discard pile for player
-		for (int i = 0; i < 4; i++){
-			canvas.drawBitmap(discardP, i*(scaledCardW + 35)+ (screenW - 105 - 4*discardP.getWidth())/2, (int) (screenH * 0.45), null);
+		//if the first discard pile is empty, draw the "Discard pile card"
+		//must do this for all the discard pile (I don't know if there is a more efficient way of doing this)
+		if (myDiscardOne.isEmpty()){
+			canvas.drawBitmap(discardP, 0*(scaledCardW + 35)+ (screenW - 105 - 4*discardP.getWidth())/2, (int) (screenH * 0.45), null);
 		}
-		//draw the discard pile for the computer
-		for (int i = 0; i < 4; i++){
-			canvas.drawBitmap(discardP, i*(scaledCardW + 10) + discardP.getWidth()+ 40, blackPaint.getTextSize() + (20*scale) ,null);
-		}
-		//draw the building pile in the middle
-		for (int i = 0; i < 4; i++){
-			canvas.drawBitmap(buildingP, i*(scaledCardW + 35)+ (screenW - 105 - 4*buildingP.getWidth())/2, (int) (screenH*0.25), null);
+		//if it is not empty, draw the last card of the discard pile
+		else {
+			canvas.drawBitmap(myDiscardOne.get(myDiscardOne.size() - 1).getBitmap(), 0*(scaledCardW + 35)+ (screenW - 105 - 4*discardP.getWidth())/2, (int) (screenH * 0.45), null);
 		}
 		
+		if (myDiscardTwo.isEmpty()){
+			canvas.drawBitmap(discardP, 1*(scaledCardW + 35)+ (screenW - 105 - 4*discardP.getWidth())/2, (int) (screenH * 0.45), null);
+		}
+
+		else {
+			canvas.drawBitmap(myDiscardTwo.get(myDiscardTwo.size() - 1).getBitmap(), 1*(scaledCardW + 35)+ (screenW - 105 - 4*discardP.getWidth())/2, (int) (screenH * 0.45), null);
+		}
+		
+		if (myDiscardThree.isEmpty()){
+			canvas.drawBitmap(discardP, 2*(scaledCardW + 35)+ (screenW - 105 - 4*discardP.getWidth())/2, (int) (screenH * 0.45), null);
+		}
+
+		else {
+			canvas.drawBitmap(myDiscardThree.get(myDiscardThree.size() - 1).getBitmap(), 2*(scaledCardW + 35)+ (screenW - 105 - 4*discardP.getWidth())/2, (int) (screenH * 0.45), null);
+		}
+		
+		if (myDiscardFour.isEmpty()){
+			canvas.drawBitmap(discardP, 3*(scaledCardW + 35)+ (screenW - 105 - 4*discardP.getWidth())/2, (int) (screenH * 0.45), null);
+		}
+		else {
+			canvas.drawBitmap(myDiscardFour.get(myDiscardFour.size() - 1).getBitmap(), 3*(scaledCardW + 35)+ (screenW - 105 - 4*discardP.getWidth())/2, (int) (screenH * 0.45), null);
+		}
+		
+		//End drawing for player discard files
+		
+		
+		//draw the discard pile for the computer
+		//same as the player discard pile
+		
+		//discard pile 1
+		if (oppDiscardOne.isEmpty()){
+			canvas.drawBitmap(discardP, 0*(scaledCardW + 10) + discardP.getWidth()+ 40, blackPaint.getTextSize() + (20*scale) ,null);
+		}
+		//if it is not empty, draw the last card of the discard pile
+		else {
+			canvas.drawBitmap(oppDiscardOne.get(oppDiscardOne.size() - 1).getBitmap(), 0*(scaledCardW + 10) + discardP.getWidth()+ 40, blackPaint.getTextSize() + (20*scale) ,null);
+		}
+		
+		//discard pile 2
+		if (oppDiscardTwo.isEmpty()){
+			canvas.drawBitmap(discardP, 1*(scaledCardW + 10) + discardP.getWidth()+ 40, blackPaint.getTextSize() + (20*scale) ,null);
+		}
+
+		else {
+			canvas.drawBitmap(oppDiscardTwo.get(oppDiscardTwo.size() - 1).getBitmap(), 1*(scaledCardW + 10) + discardP.getWidth()+ 40, blackPaint.getTextSize() + (20*scale) ,null);
+		}
+		
+		//discard pile 3
+		if (oppDiscardThree.isEmpty()){
+			canvas.drawBitmap(discardP, 2*(scaledCardW + 10) + discardP.getWidth()+ 40, blackPaint.getTextSize() + (20*scale) ,null);
+		}
+
+		else {
+			canvas.drawBitmap(oppDiscardThree.get(oppDiscardThree.size() - 1).getBitmap(), 2*(scaledCardW + 10) + discardP.getWidth()+ 40, blackPaint.getTextSize() + (20*scale) ,null);
+		}
+		
+		//discard pile 4
+		if (oppDiscardFour.isEmpty()){
+			canvas.drawBitmap(discardP, 3*(scaledCardW + 10) + discardP.getWidth()+ 40, blackPaint.getTextSize() + (20*scale) ,null);
+		}
+		else {
+			canvas.drawBitmap(oppDiscardFour.get(oppDiscardFour.size() - 1).getBitmap(), 3*(scaledCardW + 10) + discardP.getWidth()+ 40, blackPaint.getTextSize() + (20*scale) ,null);
+		}
+		//end drawing discard pile for the computer
+		
+		
+		//draw the building pile in the middle
+		if (buildPileOne.isEmpty()){
+			canvas.drawBitmap(buildingP, 0*(scaledCardW + 35)+ (screenW - 105 - 4*buildingP.getWidth())/2, (int) (screenH*0.25), null);
+		}
+		else {
+			canvas.drawBitmap(buildPileOne.get(buildPileOne.size() - 1).getBitmap(), 0*(scaledCardW + 35)+ (screenW - 105 - 4*buildingP.getWidth())/2, (int) (screenH*0.25), null);
+		}
+		
+		if (buildPileTwo.isEmpty()){
+			canvas.drawBitmap(buildingP, 1*(scaledCardW + 35)+ (screenW - 105 - 4*buildingP.getWidth())/2, (int) (screenH*0.25), null);
+		}
+		else {
+			canvas.drawBitmap(buildPileTwo.get(buildPileTwo.size() - 1).getBitmap(), 1*(scaledCardW + 35)+ (screenW - 105 - 4*buildingP.getWidth())/2, (int) (screenH*0.25), null);
+		}
+		
+		if (buildPileThree.isEmpty()){
+			canvas.drawBitmap(buildingP, 2*(scaledCardW + 35)+ (screenW - 105 - 4*buildingP.getWidth())/2, (int) (screenH*0.25), null);
+		}
+		else {
+			canvas.drawBitmap(buildPileThree.get(buildPileThree.size() - 1).getBitmap(), 2*(scaledCardW + 35)+ (screenW - 105 - 4*buildingP.getWidth())/2, (int) (screenH*0.25), null);
+		}
+		
+		if (buildPileFour.isEmpty()){
+			canvas.drawBitmap(buildingP, 3*(scaledCardW + 35)+ (screenW - 105 - 4*buildingP.getWidth())/2, (int) (screenH*0.25), null);
+		}
+		else {
+			canvas.drawBitmap(buildPileFour.get(buildPileFour.size() - 1).getBitmap(), 3*(scaledCardW + 35)+ (screenW - 105 - 4*buildingP.getWidth())/2, (int) (screenH*0.25), null);
+		}
+		
+		//end drawing building pile
 		//draw the end turn button onto the screen
 		if (endTurnButtonPressed){
 			canvas.drawBitmap(endTurnButtonDown, (int)(screenW/6), (int) (screenH*0.67), null );
@@ -292,11 +430,11 @@ public class GameView extends View {
 		if(myStack.size() != 0){
 			//if the stack card is selected. paint the card according to the moving coordinate
 			if(stackCardSelected){
-				canvas.drawBitmap(myStack.get(0).getBitmap(), movingX, movingY ,null);
+				canvas.drawBitmap(myStack.get(myStack.size() - 1).getBitmap(), movingX, movingY ,null);
 			}
 			//if not, paint it at the original position
 			else{
-				canvas.drawBitmap(myStack.get(0).getBitmap(), screenW - myStack.get(0).getBitmap().getWidth() - 50, (int) (screenH*0.6) + 30 ,null);
+				canvas.drawBitmap(myStack.get(myStack.size() - 1).getBitmap(), screenW - myStack.get(0).getBitmap().getWidth() - 50, (int) (screenH*0.6) + 30 ,null);
 			}
 		}
 		
@@ -351,18 +489,327 @@ public class GameView extends View {
 			break;
 		
 		case MotionEvent.ACTION_MOVE:
-			//don't remember
 			movingX = x - (int) (30*scale);
 			movingY = y - (int) (70*scale);
 			break;
 		
 		case MotionEvent.ACTION_UP:
-			//reset end Button
-			endTurnButtonPressed = false;
+			//check for valid plays in the build pile
+			for(int i = 0; i < 4; i++){
+				//build pile card position X
+				int buildPileStX = i*(scaledCardW + 35)+ (screenW - 105 - 4*buildingP.getWidth())/2;
+				int buildPileEdX = i*(scaledCardW + 35)+ (screenW - 105 - 4*buildingP.getWidth())/2 + scaledCardW;
+				//build pile card position Y
+				int buildPileStY = (int) (screenH*0.25);
+				int buildPileEdY = (int) (screenH*0.25) + scaledCardH;
+				
+				//collision detection
+				if(movingCardIndex > -1 &&
+					x > buildPileStX &&
+					x < buildPileEdX &&
+					y > buildPileStY &&
+					y < buildPileEdY){
+					pileSelected = i;
+					}
+				}
+			
+			//if the stack Card is selected, then check the stack card
+			if(stackCardSelected){
+				switch(pileSelected){
+				//first pile is selected
+				case 0:
+					//if the build pile is empty, the first card must be either 1 or skipbo
+					if(buildPileOne.isEmpty()){ 
+						if (myStack.get(myStack.size() - 1).getId() == 1 || myStack.get(myStack.size() - 1).getId() == 13){
+						//add the card to the pile
+						buildPileOne.add(myStack.get(myStack.size() - 1));
+						//remove the card from the stack
+						myStack.remove(myStack.size() - 1);
+						}
+					}
+					//if the top card is skipbo,gotta figure out what the skipbo card vlaue is 
+					else if(buildPileOne.get(buildPileOne.size() - 1).getId() == 13){
+						int playableRank = buildPileOne.size() + 1;
+							if(myStack.get(myStack.size() - 1).getId() == 13 ||
+									   myStack.get(myStack.size() - 1).getId() == playableRank){
+								
+								buildPileOne.add(myStack.get(myStack.size() - 1));
+								
+								myStack.remove(myStack.size() - 1);
+							}
+					}
+					//if the card is a skipbo card or the card that follows the sequence
+					else {
+						if(myStack.get(myStack.size() - 1).getId() == 13 ||
+						   myStack.get(myStack.size() - 1).getId() == (buildPileOne.get(buildPileOne.size() - 1).getId() + 1)){
+							
+							buildPileOne.add(myStack.get(myStack.size() - 1));
+							
+							myStack.remove(myStack.size() - 1);
+						}
+					}
+					
+					//reset the stack card
+					break;
+				//second
+				case 1:
+					//if the build pile is empty, the first card must be either 1 or skipbo
+					if(buildPileTwo.isEmpty()){ 
+						if (myStack.get(myStack.size() - 1).getId() == 1 || myStack.get(myStack.size() - 1).getId() == 13){
+						//add the card to the pile
+						buildPileTwo.add(myStack.get(myStack.size() - 1));
+						//remove the card from my hand
+						myStack.remove(myStack.size() - 1);
+						}
+					}
+					else if(buildPileTwo.get(buildPileTwo.size() - 1).getId() == 13){
+						int playableRank = buildPileOne.size() + 1;
+							if(myStack.get(myStack.size() - 1).getId() == 13 ||
+									   myStack.get(myStack.size() - 1).getId() == playableRank){
+								
+								buildPileTwo.add(myStack.get(myStack.size() - 1));
+								
+								myStack.remove(myStack.size() - 1);
+							}
+					}
+					//if the card is a skipbo card or the card that follows the sequence
+					else {
+						if(myStack.get(myStack.size() - 1).getId() == 13 ||
+						   myStack.get(myStack.size() - 1).getId() == (buildPileTwo.get(buildPileTwo.size() - 1).getId() + 1)){
+							//add the card to this building pile
+							buildPileTwo.add(myStack.get(myStack.size() - 1));
+							//delete it from my hand
+							myStack.remove(myStack.size() - 1);
+						}
+					}
+
+					break;
+					
+				case 2:
+					//if the build pile is empty, the first card must be either 1 or skipbo
+					if(buildPileThree.isEmpty()){ 
+						if (myStack.get(myStack.size() - 1).getId() == 1 || myStack.get(myStack.size() - 1).getId() == 13){
+						//add the card to the pile
+						buildPileThree.add(myStack.get(myStack.size() - 1));
+						//remove the card from my hand
+						myStack.remove(myStack.size() - 1);
+						}
+					}
+					else if(buildPileThree.get(buildPileThree.size() - 1).getId() == 13){
+						int playableRank = buildPileOne.size() + 1;
+							if(myStack.get(myStack.size() - 1).getId() == 13 ||
+									   myStack.get(myStack.size() - 1).getId() == playableRank){
+								
+								buildPileThree.add(myStack.get(myStack.size() - 1));
+								
+								myStack.remove(myStack.size() - 1);
+							}
+					}
+					//if the card is a skipbo card or the card that follows the sequence
+					else {
+						if(myStack.get(myStack.size() - 1).getId() == 13 ||
+						   myStack.get(myStack.size() - 1).getId() == (buildPileThree.get(buildPileThree.size() - 1).getId() + 1)){
+							//add the card to this building pile
+							buildPileThree.add(myStack.get(myStack.size() - 1));
+							//delete it from my hand
+							myStack.remove(myStack.size() - 1);
+						}
+					}
+					
+					break;
+					
+				case 3:
+					//if the build pile is empty, the first card must be either 1 or skipbo
+					if(buildPileFour.isEmpty()){ 
+						if (myStack.get(myStack.size() - 1).getId() == 1 || myStack.get(myStack.size() - 1).getId() == 13){
+						//add the card to the pile
+						buildPileFour.add(myStack.get(myStack.size() - 1));
+						//remove the card from my hand
+						myStack.remove(myStack.size() - 1);
+						}
+					}
+					else if(buildPileFour.get(buildPileFour.size() - 1).getId() == 13){
+						int playableRank = buildPileFour.size() + 1;
+							if(myStack.get(myStack.size() - 1).getId() == 13 ||
+									   myStack.get(myStack.size() - 1).getId() == playableRank){
+								
+								buildPileFour.add(myStack.get(myStack.size() - 1));
+								
+								myStack.remove(myStack.size() - 1);
+							}
+					}
+					//if the card is a skipbo card or the card that follows the sequence
+					else {
+						if(myStack.get(myStack.size() - 1).getId() == 13 ||
+						   myStack.get(myStack.size() - 1).getId() == (buildPileFour.get(buildPileFour.size() - 1).getId() + 1)){
+							//add the card to this building pile
+							buildPileFour.add(myStack.get(myStack.size() - 1));
+							//delete it from my hand
+							myStack.remove(myStack.size() - 1);
+						}
+					}
+					break;
+				}
+			}
+			
+			else{
+			switch(pileSelected){
+			//first pile is selected
+			case 0:
+				//if the build pile is empty, the first card must be either 1 or skipbo
+				if(buildPileOne.isEmpty()){ 
+					if (myHand.get(movingCardIndex).getId() == 1 || myHand.get(movingCardIndex).getId() == 13){
+					//add the card to the pile
+					buildPileOne.add(myHand.get(movingCardIndex));
+					//remove the card from my hand
+					myHand.remove(movingCardIndex);
+					}
+				}
+				else if(buildPileOne.get(buildPileOne.size() - 1).getId() == 13){
+					int playableRank = buildPileOne.size() + 1;
+						if(myHand.get(movingCardIndex).getId() == 13 ||
+								myHand.get(movingCardIndex).getId() == playableRank){
+							
+							buildPileOne.add(myHand.get(movingCardIndex));
+							
+							myHand.remove(movingCardIndex);
+						}
+				}
+				//if the card is a skipbo card or the card that follows the sequence
+				else {
+					if(myHand.get(movingCardIndex).getId() == 13 ||
+				       myHand.get(movingCardIndex).getId() == (buildPileOne.get(buildPileOne.size() - 1).getId() + 1)){
+						//add the card to this building pile
+						buildPileOne.add(myHand.get(movingCardIndex));
+						//delete it from my hand
+						myHand.remove(movingCardIndex);
+					}
+				}
+
+				break;
+			//second
+			case 1:
+				//if the build pile is empty, the first card must be either 1 or skipbo
+				if(buildPileTwo.isEmpty()){ 
+					if (myHand.get(movingCardIndex).getId() == 1 || myHand.get(movingCardIndex).getId() == 13){
+					//add the card to the pile
+					buildPileTwo.add(myHand.get(movingCardIndex));
+					//remove the card from my hand
+					myHand.remove(movingCardIndex);
+					}
+				}
+				else if(buildPileTwo.get(buildPileTwo.size() - 1).getId() == 13){
+					int playableRank = buildPileTwo.size() + 1;
+						if(myHand.get(movingCardIndex).getId() == 13 ||
+								myHand.get(movingCardIndex).getId() == playableRank){
+							
+							buildPileTwo.add(myHand.get(movingCardIndex));
+							
+							myHand.remove(myHand.get(movingCardIndex));
+						}
+				}
+				//if the card is a skipbo card or the card that follows the sequence
+				else {
+					if(myHand.get(movingCardIndex).getId() == 13 ||
+				       myHand.get(movingCardIndex).getId() == (buildPileTwo.get(buildPileTwo.size() - 1).getId() + 1)){
+						//add the card to this building pile
+						buildPileTwo.add(myHand.get(movingCardIndex));
+						//delete it from my hand
+						myHand.remove(movingCardIndex);
+					}
+				}
+				break;
+				
+			case 2:
+				if(buildPileThree.isEmpty()){ 
+					if (myHand.get(movingCardIndex).getId() == 1 || myHand.get(movingCardIndex).getId() == 13){
+					//add the card to the pile
+					buildPileThree.add(myHand.get(movingCardIndex));
+					//remove the card from my hand
+					myHand.remove(movingCardIndex);
+					}
+				}
+				else if(buildPileThree.get(buildPileThree.size() - 1).getId() == 13){
+					int playableRank = buildPileThree.size() + 1;
+						if(myHand.get(movingCardIndex).getId() == 13 ||
+								myHand.get(movingCardIndex).getId() == playableRank){
+							
+							buildPileThree.add(myHand.get(movingCardIndex));
+							
+							myHand.remove(myHand.get(movingCardIndex));
+						}
+				}
+				//if the card is a skipbo card or the card that follows the sequence
+				else {
+					if(myHand.get(movingCardIndex).getId() == 13 ||
+				       myHand.get(movingCardIndex).getId() == (buildPileThree.get(buildPileThree.size() - 1).getId() + 1)){
+						//add the card to this building pile
+						buildPileThree.add(myHand.get(movingCardIndex));
+						//delete it from my hand
+						myHand.remove(movingCardIndex);
+					}
+				}
+				break;
+				
+			case 3:
+				if(buildPileFour.isEmpty()){ 
+					if (myHand.get(movingCardIndex).getId() == 1 || myHand.get(movingCardIndex).getId() == 13){
+					//add the card to the pile
+					buildPileFour.add(myHand.get(movingCardIndex));
+					//remove the card from my hand
+					myHand.remove(movingCardIndex);
+					}
+				}
+				else if(buildPileFour.get(buildPileFour.size() - 1).getId() == 13){
+					int playableRank = buildPileFour.size() + 1;
+						if(myHand.get(movingCardIndex).getId() == 13 ||
+								myHand.get(movingCardIndex).getId() == playableRank){
+							
+							buildPileFour.add(myStack.get(myStack.size() - 1));
+							
+							myHand.remove(myHand.get(movingCardIndex));
+						}
+				}
+				//if the card is a skipbo card or the card that follows the sequence
+				else {
+					if(myHand.get(movingCardIndex).getId() == 13 ||
+				       myHand.get(movingCardIndex).getId() == (buildPileFour.get(buildPileFour.size() - 1).getId() + 1)){
+						//add the card to this building pile
+						buildPileFour.add(myHand.get(movingCardIndex));
+						//delete it from my hand
+						myHand.remove(movingCardIndex);
+					}
+				}
+				break;
+			}
+			}
+			//end checking
+			
+			//collision detection for discard pile
+			for(int i = 0; i < 4; i++){
+				int cardstX = i*(scaledCardW + 35)+ (screenW - 105 - 4*discardP.getWidth())/2;
+				int cardedX = i*(scaledCardW + 35)+ (screenW - 105 - 4*discardP.getWidth())/2 + scaledCardW;
+				int cardstY = (int) (screenH * 0.45);
+				int cardedY = (int) (screenH * 0.45) + scaledCardH;
+				
+				if(movingCardIndex > -1 &&
+						x > cardstX &&
+						x < cardedX &&
+						y > cardstY &&
+						y < cardedY){
+						discardPileSelected = i;
+						}
+			}
+			
+			//after pressing a discard button, one must discard a card from his hand
+			if(endTurnButtonPressed){
+				discardNow = true;
+				endTurnButtonPressed = false;				
+			}
+			
+			stackCardSelected = false;
 			//reset selected card
 			movingCardIndex = -1;
-			//reset the stack card
-			stackCardSelected = false;
 			break;
 		}
 	invalidate();
