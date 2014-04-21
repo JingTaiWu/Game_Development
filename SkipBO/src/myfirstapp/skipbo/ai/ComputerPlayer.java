@@ -1,5 +1,6 @@
 package myfirstapp.skipbo.ai;
 
+
 //import java.util.List;
 //import myfirstapp.skipbo.card.Card;
 

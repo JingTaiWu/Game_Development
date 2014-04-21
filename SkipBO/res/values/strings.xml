@@ -4,5 +4,13 @@
     <string name="app_name">SkipBO</string>
     <string name="action_settings">Settings</string>
     <string name="hello_world">Hello world!</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="end_turn">End Turn?</string>
+    <string name="discard_now">if yes, remember to discard one card from your hand</string>
+    <string name="okay">okay</string>
+    <string name="you_win">You are the WINNER</string>
+    <string name="please_discard">Please discard a card now</string>
+    <string name="Turn_switch">It is your turn Now</string>
 
 </resources>
