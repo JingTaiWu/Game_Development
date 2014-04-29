@@ -9,7 +9,7 @@
     <string name="end_turn">End Turn?</string>
     <string name="discard_now">if yes, remember to discard one card from your hand</string>
     <string name="okay">okay</string>
-    <string name="you_win">You are the WINNER</string>
+    <string name="you_win">You are the WINNER! Another Game?</string>
     <string name="please_discard">Please discard a card now</string>
     <string name="Turn_switch">It is your turn Now</string>
 
